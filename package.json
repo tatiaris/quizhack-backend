@@ -1,0 +1,15 @@
+{
+    "name": "quizhack",
+    "version": "1.0.0",
+    "description": "quizlet combiner",
+    "main": "hack.js",
+    "author": "Rishabh Tatia",
+    "license": "ISC",
+    "dependencies": {
+        "axios": "^0.19.2",
+        "cheerio": "^1.0.0-rc.3",
+        "shortid": "^2.2.15",
+
+        "socket.io": "^2.3.0"
+    }
+}
