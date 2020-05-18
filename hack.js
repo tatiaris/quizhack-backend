@@ -4,13 +4,16 @@ const serv = require('http').Server(app);
 const io = require('socket.io')(serv, {});
 const axios = require('axios');
 const cheerio = require('cheerio');
+const cors = require('cors')
 
-serv.listen(3000);
+serv.listen(process.env.port || 3000);
+
+app.use(cors())
 
 app.get('/', function(req, res) {
-    res.sendFile(__dirname + '/public/build/index.html');
+    res.sendFile(__dirname + '/public/index.html');
 });
-app.use('/public/build/', express.static(__dirname + '/public/build/'));
+app.use('/public/', express.static(__dirname + '/public/'));
 
 const sort_cards = cards => {
     cards.sort(function (a, b) {
