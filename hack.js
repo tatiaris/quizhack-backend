@@ -4,7 +4,8 @@ const serv = require('http').Server(app);
 const io = require('socket.io')(serv, {});
 const axios = require('axios');
 const cheerio = require('cheerio');
-const cors = require('cors')
+const cors = require('cors');
+const _ = require('lodash')
 
 serv.listen(process.env.PORT || 3000);
 
