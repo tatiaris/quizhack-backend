@@ -6,7 +6,7 @@
     "author": "Rishabh Tatia",
     "license": "ISC",
     "scripts": {
-        "start": "node ./hack.js"
+        "start": "node hack.js"
     },
     "dependencies": {
         "axios": "^0.19.2",

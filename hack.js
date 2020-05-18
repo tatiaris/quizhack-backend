@@ -10,10 +10,10 @@ serv.listen(process.env.port || 3000);
 
 app.use(cors())
 
-app.get('/', function(req, res) {
-    res.sendFile(__dirname + '/public/index.html');
+app.get('*', function(req, res) {
+    res.sendFile(__dirname + './public/index.html');
 });
-app.use('/public/', express.static(__dirname + '/public/'));
+app.use('./public', express.static(__dirname + './public'));
 
 const sort_cards = cards => {
     cards.sort(function (a, b) {
