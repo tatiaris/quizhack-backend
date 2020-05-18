@@ -6,8 +6,9 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
 const _ = require('lodash')
+const shortid = require('shortid')
 
-serv.listen(process.env.PORT || 3000);
+serv.listen(process.env.PORT || 5000);
 
 app.use(cors())
 
@@ -67,6 +68,7 @@ io.sockets.on('connection', socket => {
                                 if (unique) unique_cnt++
                                 let display = true
                                 if (unique_state) display = unique
+                                console.log('pushing card')
                                 cards.push(
                                     {
                                         id: shortid.generate(),
@@ -77,6 +79,7 @@ io.sockets.on('connection', socket => {
                                         search_phrase: true
                                     }
                                 )
+                                console.log('pushed card')
                                 c_list.push(p + a)
                                 p_list.push(p.toUpperCase())
                             }
@@ -91,6 +94,8 @@ io.sockets.on('connection', socket => {
         }), (error) => {
             console.log('error fetching', topic_url);
         };
+
+        console.log(cards)
 
         let card_count = cards.length
         if (unique_state) card_count = unique_cnt
