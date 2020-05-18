@@ -4,7 +4,6 @@ const serv = require('http').Server(app);
 const io = require('socket.io')(serv, {});
 const axios = require('axios');
 const cheerio = require('cheerio');
-const shortid = require('shortid');
 
 serv.listen(3000);
 
@@ -13,19 +12,32 @@ app.get('/', function(req, res) {
 });
 app.use('/public/build/', express.static(__dirname + '/public/build/'));
 
+const sort_cards = cards => {
+    cards.sort(function (a, b) {
+        let ta = a.prompt.toUpperCase()
+        let tb = b.prompt.toUpperCase()
+        if (ta < tb) return -1
+        if (ta > tb) return 1
+        return 0
+    })
+    return cards
+}
 
 io.sockets.on('connection', socket => {
-    console.log('client connected');
+    console.log('client connected', socket.id);
 
-    let get_cards = topic => {
+    let get_cards = async (topic, sort_state, unique_state) => {
+        let total_sets = 0
         let cards = []
+        let c_list = []
+        let p_list = []
+        let unique_cnt = 0
 
         let topic_url = `https://quizlet.com/subject/` + topic.replace(/ /g, '-') + `/?price=free&type=sets&creator=all`
         
-        axios.get(topic_url).then(response => {
+        await axios.get(topic_url).then(async response => {
             const $ = cheerio.load(response.data)
             let sets = $('.UILinkBox-link')
-            console.log('found', sets.length, 'sets')
             if (sets.length < 1) {
                 socket.emit('cards_update', {
                     cards: [],
@@ -35,30 +47,37 @@ io.sockets.on('connection', socket => {
 
             for (let i = 0; i < sets.length; i++) {
                 let set_url = sets[i].children[0].attribs.href
-                // console.log('getting data from', set_url)
 
-                axios.get(set_url).then(response => {
+                await axios.get(set_url).then(async response => {
+                    total_sets++
                     const $ = cheerio.load(response.data)
                     let terms = $('.SetPageTerm-wordText')
                     let definitions = $('.SetPageTerm-definitionText')
 
                     for (let j = 0; j < terms.length; j++) {
                         try {
-                            cards.push(
-                                {
-                                    id: shortid.generate(),
-                                    prompt: terms[j].children[0].children[0].data,
-                                    answer: definitions[j].children[0].children[0].data
-                                }
-                            )
+                            let p = terms[j].children[0].children[0].data
+                            let a = definitions[j].children[0].children[0].data
+                            if (!c_list.includes(p + a) && p && a){
+                                let unique = !p_list.includes(p.toUpperCase())
+                                if (unique) unique_cnt++
+                                let display = true
+                                if (unique_state) display = unique
+                                cards.push(
+                                    {
+                                        id: shortid.generate(),
+                                        prompt: p,
+                                        answer: a,
+                                        unique: unique,
+                                        display: display,
+                                        search_phrase: true
+                                    }
+                                )
+                                c_list.push(p + a)
+                                p_list.push(p.toUpperCase())
+                            }
                         } catch (error) {}
-                        
-                        if (i == sets.length - 1 && j == terms.length - 1) {
-                            socket.emit('cards_update', {
-                                cards: cards,
-                                set_count: sets.length
-                            })
-                        }
+
                     }
                 }), (error) => {
                     console.log('error fetching', set_url);
@@ -69,14 +88,29 @@ io.sockets.on('connection', socket => {
             console.log('error fetching', topic_url);
         };
 
+        let card_count = cards.length
+        if (unique_state) card_count = unique_cnt
+      
+        let unsorted_cards = _.clone(cards)
+        let sorted_cards = sort_cards(_.clone(cards))
+        if (sort_state) cards = sorted_cards
+
+        socket.emit('cards_update', {
+            cards: cards,
+            card_count: card_count,
+            sorted_cards: sorted_cards,
+            unsorted_cards: unsorted_cards,
+            set_count: total_sets
+        })
+
     }
 
     socket.on('requesting_cards', data => {
         console.log('fetching cards for', data.topic)
-        get_cards(data.topic)
+        get_cards(data.topic, data.sorted, data.unique)
     });
 
     socket.on("disconnect", () => {
-        console.log("client disconnected");
+        console.log("client disconnected", socket.id);
     });
 })
