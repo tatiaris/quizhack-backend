@@ -113,7 +113,20 @@ io.sockets.on('connection', socket => {
 
     socket.on('requesting_cards', data => {
         console.log('fetching cards for', data.topic)
-        get_cards(data.topic, data.sorted, data.unique)
+        // get_cards(data.topic, data.sorted, data.unique)
+        socket.emit('cards_update', {
+            cards: [
+              {
+                id: shortid.generate(),
+                prompt: 'Sorry!',
+                answer: 'This app is undergoing maintainance at the moment.',
+                unique: true,
+                display: true,
+                search_phrase: true
+              }
+            ],
+            set_count: 0
+        })
     });
 
     socket.on("disconnect", () => {
